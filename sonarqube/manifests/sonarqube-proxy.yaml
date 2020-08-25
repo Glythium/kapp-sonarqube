@@ -1,5 +1,3 @@
----
-# Source: oauth2-proxy/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -9,24 +7,8 @@ metadata:
     release: sonarqube-proxy
     heritage: Helm
   name: sonarqube-proxy-oauth2-proxy
+  namespace: sonarqube
 ---
-# Source: oauth2-proxy/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  labels:
-    app: oauth2-proxy
-    chart: oauth2-proxy-3.2.2
-    heritage: Helm
-    release: sonarqube-proxy
-  name: sonarqube-proxy-oauth2-proxy
-type: Opaque
-data:
-  cookie-secret: "WFhYWFhYWFhYWA=="
-  client-secret: "WFhYWFhYWFg="
-  client-id: "WFhYWFhYWA=="
----
-# Source: oauth2-proxy/templates/configmap.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -36,10 +18,14 @@ metadata:
     heritage: Helm
     release: sonarqube-proxy
   name: sonarqube-proxy-oauth2-proxy
+  namespace: sonarqube
 data:
-  oauth2_proxy.cfg: "email_domains = [ \"*\" ]\nupstreams = [ \"file:///dev/null\" ]"
+  oauth2_proxy.cfg: "provider = \"oidc\"\nprovider_display_name = \"Dex\"\nredirect_url
+    = \"https://sonarqube.sandbox.futures.army/oauth2/callback\"\nupstreams = [ \"http://sonarqube-sonarqube:9000\"
+    ]\noidc_issuer_url = \"https://login.sso.tanzu.world\"\npass_basic_auth = true\npass_user_headers
+    = true\npass_host_header = true \nssl_insecure_skip_verify = true\nemail_domains
+    = [\n    \"*\"\n]"
 ---
-# Source: oauth2-proxy/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -49,18 +35,18 @@ metadata:
     release: sonarqube-proxy
     heritage: Helm
   name: sonarqube-proxy-oauth2-proxy
+  namespace: sonarqube
 spec:
   type: ClusterIP
   ports:
-    - port: 80
-      targetPort: http
-      protocol: TCP
-      name: http
+  - port: 80
+    targetPort: http
+    protocol: TCP
+    name: http
   selector:
     app: oauth2-proxy
     release: sonarqube-proxy
 ---
-# Source: oauth2-proxy/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -70,6 +56,7 @@ metadata:
     heritage: Helm
     release: sonarqube-proxy
   name: sonarqube-proxy-oauth2-proxy
+  namespace: sonarqube
 spec:
   replicas: 1
   selector:
@@ -79,42 +66,42 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 89f38afc98e067cf3ef2d3de11e800a77c0317562006ed883fd2bf0c8a81b83b
+        checksum/config: 9d31781c3ae54e5a89ddef94ea934373fb62f04ed9983c561fc7ea56dfaba119
         checksum/config-emails: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
-        checksum/secret: 7f70375a0e3ca68daae735ff6fc13490177be4aa96850265cb47b20141f2ae3c
+        checksum/secret: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
         checksum/google-secret: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
       labels:
         app: oauth2-proxy
-        release: "sonarqube-proxy"
+        release: sonarqube-proxy
     spec:
       serviceAccountName: sonarqube-proxy-oauth2-proxy
       containers:
       - name: oauth2-proxy
-        image: "quay.io/pusher/oauth2_proxy:v5.1.0"
-        imagePullPolicy: IfNotPresent
+        image: quay.io/oauth2-proxy/oauth2-proxy:v5.1.0
+        imagePullPolicy: Always
         args:
-          - --http-address=0.0.0.0:4180
-          - --config=/etc/oauth2_proxy/oauth2_proxy.cfg
+        - --http-address=0.0.0.0:4180
+        - --config=/etc/oauth2_proxy/oauth2_proxy.cfg
         env:
         - name: OAUTH2_PROXY_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name:  sonarqube-proxy-oauth2-proxy
+              name: sonarqube-passwords
               key: client-id
         - name: OAUTH2_PROXY_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name:  sonarqube-proxy-oauth2-proxy
+              name: sonarqube-passwords
               key: client-secret
         - name: OAUTH2_PROXY_COOKIE_SECRET
           valueFrom:
             secretKeyRef:
-              name:  sonarqube-proxy-oauth2-proxy
+              name: sonarqube-passwords
               key: cookie-secret
         ports:
-          - containerPort: 4180
-            name: http
-            protocol: TCP
+        - containerPort: 4180
+          name: http
+          protocol: TCP
         livenessProbe:
           httpGet:
             path: /ping
@@ -131,15 +118,15 @@ spec:
           timeoutSeconds: 1
           successThreshold: 1
           periodSeconds: 10
-        resources:
-          {}
+        resources: {}
         volumeMounts:
         - mountPath: /etc/oauth2_proxy
           name: configmain
+        securityContext:
+          runAsNonRoot: true
       volumes:
       - configMap:
           defaultMode: 420
           name: sonarqube-proxy-oauth2-proxy
         name: configmain
-      tolerations:
-        []
+      tolerations: []
