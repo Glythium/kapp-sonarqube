@@ -1,0 +1,24 @@
+config:
+  existingSecret: sonarqube-passwords
+
+  configFile: |-
+    provider = "oidc"
+    provider_display_name = "Dex"
+    redirect_url = "https://sonarqube.sandbox.futures.army/oauth2/callback"
+    upstreams = [ "http://sonarqube-sonarqube:9000" ]
+    oidc_issuer_url = "https://login.sso.tanzu.world"
+    pass_basic_auth = true
+    pass_user_headers = true
+    pass_host_header = true 
+    ssl_insecure_skip_verify = true
+    email_domains = [
+        "*"
+    ]
+
+image:
+  repository: "quay.io/oauth2-proxy/oauth2-proxy"
+  tag: "v5.1.0"
+  pullPolicy: "Always"
+
+securityContext:
+  enabled: true

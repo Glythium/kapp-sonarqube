@@ -1,0 +1,16 @@
+apiVersion: kappctrl.k14s.io/v1alpha1
+kind: App
+metadata:
+  name: sonarqube
+  namespace: default
+spec:
+  serviceAccountName: default-ns-sa
+  fetch:
+  - git:
+      url: https://code.afcmade.com/chrysalis/kapp-sonarqube
+      ref: origin/master
+      subPath: sonarqube/manifests
+  template:
+  - ytt: {}
+  deploy:
+  - kapp: {}
