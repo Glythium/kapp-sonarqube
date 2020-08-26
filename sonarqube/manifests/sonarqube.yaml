@@ -16,6 +16,8 @@ metadata:
   namespace: sonarqube
 data:
   sonar.properties: |-
+    sonar.auth.oidc.enabled=true
+    sonar.auth.oidc.issuerUri=https://login.microsoftonline.us/996c1271-b5cb-4225-aad3-8c84636cc06d/v2.0
     sonar.core.serverBaseURL=sonarqube.sandbox.futures.army
     sonar.web.sso.enable=true
     sonar.web.sso.loginHeader=X-Forwarded-Email
@@ -148,7 +150,7 @@ spec:
         release: sonarqube
       annotations:
         checksum/plugins: 23149cf2af7a61542baa2ead4191210a7314d7bf8d6ff59100408776819c7633
-        checksum/config: 666a8a0ee76ed7ecd504a86c238ee61bfc55391cacb360daf38d95ec8f8d212c
+        checksum/config: 3709f8c3f38cbf1bd38ebffadb7ee4a1eb53f615ec97a64bf5b2e4b5d172ab3c
         checksum/secret: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
     spec:
       serviceAccountName: sonarqube-sonarqube
